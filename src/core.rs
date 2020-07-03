@@ -19,20 +19,22 @@ pub fn run(args: Vec<String>) {
 }
 
 fn parent(pid: Pid) -> i32 {
-    let retcode: i32;
     loop {
         match waitpid(pid, None) {
             Ok(WaitStatus::Exited(_, code)) => {
-                retcode = code;
-                break;
+                break code;
             }
             Ok(_) => (),
             Err(e) => println!("waitpid() failed: {:?}", e),
         }
-        //ptrace::getregs(pid);
+        match ptrace::getregs(pid) {
+            Ok(libc::user_regs_struct { orig_rax, .. }) => {
+                println!("Syscall number: {:?}", orig_rax);
+            }
+            Err(e) => println!("ptrace::getregs() failed: {:?}", e),
+        }
         ptrace::syscall(pid, None).expect("ptrace::syscall() failed");
     }
-    return retcode;
 }
 
 fn child(args: Vec<String>) {
