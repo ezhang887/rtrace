@@ -2,8 +2,8 @@ extern crate nix;
 
 use std::ffi::{CStr, CString};
 
-//use nix::sys::ptrace;
-use nix::sys::wait::waitpid;
+use nix::sys::ptrace;
+use nix::sys::wait::{waitpid, WaitStatus};
 use nix::unistd::{execvp, fork, ForkResult, Pid};
 
 pub fn run(command: &str) {
@@ -19,10 +19,23 @@ pub fn run(command: &str) {
 }
 
 fn parent(pid: Pid) {
-    waitpid(pid, None);
+    loop {
+        match waitpid(pid, None) {
+            Ok(WaitStatus::Exited(_, code)) => {
+                break;
+            }
+            Ok(WaitStatus::Stopped(_, signal)) => (),
+            Ok(s) => println!("Unexpected stop reason: {:?}", s),
+            Err(e) => println!("waitpid()"),
+        }
+        //ptrace::getregs(pid);
+        ptrace::syscall(pid, None);
+    }
+    ptrace::detach(pid, None);
 }
 
 fn child(command: &str) {
+    ptrace::traceme();
     exec(command);
 }
 

@@ -1,1 +1,1 @@
-sleep 10 && ls
+sleep 1 && ls
