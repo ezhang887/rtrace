@@ -18,24 +18,25 @@ pub fn run(args: Vec<String>) {
     }
 }
 
-fn parent(pid: Pid) {
+fn parent(pid: Pid) -> i32 {
+    let retcode: i32;
     loop {
         match waitpid(pid, None) {
             Ok(WaitStatus::Exited(_, code)) => {
+                retcode = code;
                 break;
             }
-            Ok(WaitStatus::Stopped(_, signal)) => (),
-            Ok(s) => println!("Unexpected stop reason: {:?}", s),
-            Err(e) => println!("waitpid()"),
+            Ok(_) => (),
+            Err(e) => println!("waitpid() failed: {:?}", e),
         }
         //ptrace::getregs(pid);
-        ptrace::syscall(pid, None);
+        ptrace::syscall(pid, None).expect("ptrace::syscall() failed");
     }
-    ptrace::detach(pid, None);
+    return retcode;
 }
 
 fn child(args: Vec<String>) {
-    ptrace::traceme();
+    ptrace::traceme().expect("traceme() failed");
     exec(args);
 }
 
@@ -45,5 +46,5 @@ fn exec(args: Vec<String>) {
         .map(|t| CString::new(t.as_bytes()).unwrap())
         .collect();
     let args_cstr: Vec<&CStr> = args_cstring.iter().map(|c| c.as_c_str()).collect();
-    execvp(args_cstr[0], &args_cstr);
+    execvp(args_cstr[0], &args_cstr).expect("execvp() failed");
 }
