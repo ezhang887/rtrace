@@ -1,5 +1,7 @@
 extern crate nix;
 
+use crate::syscall;
+
 use std::ffi::{CStr, CString};
 
 use nix::sys::ptrace;
@@ -29,7 +31,7 @@ fn parent(pid: Pid) -> i32 {
         }
         match ptrace::getregs(pid) {
             Ok(libc::user_regs_struct { orig_rax, .. }) => {
-                println!("Syscall number: {:?}", orig_rax);
+                println!("{:?}", syscall::get_syscall_name(orig_rax));
             }
             Err(e) => println!("ptrace::getregs() failed: {:?}", e),
         }
