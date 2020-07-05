@@ -9,5 +9,5 @@ use std::env;
 fn main() {
     syscall::parse_syscall_table();
     let args: Vec<String> = env::args().collect();
-    core::run(args[1..].to_vec());
+    std::process::exit(core::run(args[1..].to_vec()));
 }

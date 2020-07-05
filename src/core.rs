@@ -10,16 +10,17 @@ use nix::unistd::{execvp, fork, ForkResult, Pid};
 
 const ENOSYS: u64 = 38;
 
-pub fn run(args: Vec<String>) {
+pub fn run(args: Vec<String>) -> i32 {
     match fork() {
         Ok(ForkResult::Parent { child, .. }) => {
-            parent(child);
+            return parent(child);
         }
         Ok(ForkResult::Child) => {
             child(args);
         }
         Err(_) => println!("Fork failed"),
     }
+    return 0;
 }
 
 fn parent(pid: Pid) -> i32 {
