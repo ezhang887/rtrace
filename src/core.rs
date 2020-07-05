@@ -8,6 +8,8 @@ use nix::sys::ptrace;
 use nix::sys::wait::{waitpid, WaitStatus};
 use nix::unistd::{execvp, fork, ForkResult, Pid};
 
+const ENOSYS: u64 = 38;
+
 pub fn run(args: Vec<String>) {
     match fork() {
         Ok(ForkResult::Parent { child, .. }) => {
@@ -21,6 +23,7 @@ pub fn run(args: Vec<String>) {
 }
 
 fn parent(pid: Pid) -> i32 {
+    let mut print = true;
     loop {
         match waitpid(pid, None) {
             Ok(WaitStatus::Exited(_, code)) => {
@@ -30,8 +33,16 @@ fn parent(pid: Pid) -> i32 {
             Err(e) => println!("waitpid() failed: {:?}", e),
         }
         match ptrace::getregs(pid) {
-            Ok(libc::user_regs_struct { orig_rax, .. }) => {
-                println!("{:?}", syscall::get_syscall_name(orig_rax));
+            Ok(libc::user_regs_struct { orig_rax, rax, .. }) => {
+                if print {
+                    println!("{}", syscall::get_syscall_name(orig_rax));
+                }
+                // negate ENOSYS => flip bits and add 1
+                if rax == !ENOSYS + 1 {
+                    print = false;
+                } else {
+                    print = true;
+                }
             }
             Err(e) => println!("ptrace::getregs() failed: {:?}", e),
         }
