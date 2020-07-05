@@ -12,7 +12,7 @@ pub fn get_syscall_name(num: libc::c_ulonglong) -> &'static str {
     return &SYSCALL_TABLE[&num];
 }
 
-pub fn parse_syscall_table() -> HashMap<u64, String> {
+fn parse_syscall_table() -> HashMap<u64, String> {
     let data = fs::read_to_string(SYSCALL_TABLE_PATH).expect("Unable to read syscall table");
     let lines: Vec<&str> = data
         .split('\n')
