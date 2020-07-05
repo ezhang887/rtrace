@@ -36,13 +36,18 @@ fn parent(pid: Pid) -> i32 {
         match ptrace::getregs(pid) {
             Ok(libc::user_regs_struct { orig_rax, rax, .. }) => {
                 if print {
-                    println!("{}", syscall::get_syscall_name(orig_rax));
+                    print!("{}", syscall::get_syscall_name(orig_rax));
                 }
                 // negate ENOSYS => flip bits and add 1
                 if rax == !ENOSYS + 1 {
                     print = false;
                 } else {
                     print = true;
+                    let mut returnval = rax as i64;
+                    if returnval < 0 {
+                        returnval += 1;
+                    }
+                    println!("={}", returnval);
                 }
             }
             Err(e) => println!("ptrace::getregs() failed: {:?}", e),
