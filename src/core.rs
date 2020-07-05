@@ -8,8 +8,6 @@ use nix::sys::ptrace;
 use nix::sys::wait::{waitpid, WaitStatus};
 use nix::unistd::{execvp, fork, ForkResult, Pid};
 
-const ENOSYS: u64 = 38;
-
 pub fn run(args: Vec<String>) -> i32 {
     match fork() {
         Ok(ForkResult::Parent { child, .. }) => {
@@ -39,7 +37,7 @@ fn parent(pid: Pid) -> i32 {
                     print!("{}", syscall::get_syscall_name(orig_rax));
                 }
                 // negate ENOSYS => flip bits and add 1
-                if rax == !ENOSYS + 1 {
+                if rax as i32 == !libc::ENOSYS + 1 {
                     print = false;
                 } else {
                     print = true;
